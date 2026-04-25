@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000");
+const API = "https://bahamasedu-backend.onrender.com";
+const socket = io(API);
 
 function Chat() {
   const [message, setMessage] = useState("");
@@ -11,12 +12,13 @@ function Chat() {
   const receiverId = prompt("Enter Teacher/Student ID");
 
   useEffect(() => {
+    if (!userId) return;
+
     socket.emit("join", userId);
 
-    // load history
     const loadMessages = async () => {
       const res = await fetch(
-        `http://localhost:5000/messages/${userId}/${receiverId}`
+        `${API}/messages/${userId}/${receiverId}`
       );
 
       const data = await res.json();
@@ -56,8 +58,8 @@ function Chat() {
           padding: 10,
         }}
       >
-        {messages.map((msg) => (
-          <div key={msg._id}>
+        {messages.map((msg, i) => (
+          <div key={i}>
             <b>{msg.senderId}:</b> {msg.message}
           </div>
         ))}
