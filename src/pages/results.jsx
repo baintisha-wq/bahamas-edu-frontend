@@ -1,22 +1,26 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+const API = import.meta.env.VITE_API_URL;
+
 function Results() {
   const { id } = useParams();
   const [result, setResult] = useState(null);
 
   useEffect(() => {
     const fetchResult = async () => {
-      const res = await fetch("http://localhost:5000/results", {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token")
-        }
-      });
+      try {
+        const res = await fetch(`${API}/results/${id}`, {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("token"),
+          },
+        });
 
-      const data = await res.json();
-
-      const found = data.find((r) => r._id === id);
-      setResult(found);
+        const data = await res.json();
+        setResult(data);
+      } catch (err) {
+        console.log("Result fetch error:", err);
+      }
     };
 
     fetchResult();
@@ -26,7 +30,7 @@ function Results() {
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>Quiz Results</h2>
+      <h2>📊 Quiz Results</h2>
 
       <h3>Score: {result.score}</h3>
       <h3>Percentage: {result.percentage}%</h3>

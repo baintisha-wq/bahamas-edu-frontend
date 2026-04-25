@@ -3,19 +3,17 @@ import { useEffect, useState } from "react";
 function StudentFiles() {
   const [files, setFiles] = useState([]);
 
+  const API = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     const fetchFiles = async () => {
       try {
-        const res = await fetch(
-          "http://localhost:5000/files",
-          {
-            headers: {
-              Authorization:
-                "Bearer " +
-                localStorage.getItem("token"),
-            },
-          }
-        );
+        const res = await fetch(`${API}/files`, {
+          headers: {
+            Authorization:
+              "Bearer " + localStorage.getItem("token"),
+          },
+        });
 
         const data = await res.json();
         setFiles(data);
@@ -29,7 +27,7 @@ function StudentFiles() {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Study Materials 📚</h1>
+      <h1>📚 Study Materials</h1>
 
       {files.length === 0 ? (
         <p>No files uploaded yet</p>
@@ -47,7 +45,7 @@ function StudentFiles() {
             <h3>{file.title}</h3>
 
             <a
-              href={`http://localhost:5000/uploads/${file.filename}`}
+              href={`${API}/uploads/${file.filename}`}
               target="_blank"
               rel="noreferrer"
               style={{

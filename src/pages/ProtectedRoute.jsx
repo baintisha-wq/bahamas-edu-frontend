@@ -4,12 +4,14 @@ function ProtectedRoute({ children, role }) {
   const token = localStorage.getItem("token");
   const userRole = localStorage.getItem("role");
 
+  // ❌ NOT LOGGED IN
   if (!token) {
-    return <Navigate to="/" />;
+    return <Navigate to="/login" replace />;
   }
 
+  // ❌ WRONG ROLE ACCESS
   if (role && userRole !== role) {
-    return <Navigate to="/" />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return children;

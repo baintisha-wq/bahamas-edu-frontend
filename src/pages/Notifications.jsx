@@ -3,17 +3,14 @@ import { useEffect, useState } from "react";
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
 
+  const API = import.meta.env.VITE_API_URL;
+  const userId = localStorage.getItem("userId");
+
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         const res = await fetch(
-          "http://localhost:5000/notifications",
-          {
-            headers: {
-              Authorization:
-                "Bearer " + localStorage.getItem("token"),
-            },
-          }
+          `${API}/notifications/${userId}`
         );
 
         const data = await res.json();
@@ -23,12 +20,12 @@ function Notifications() {
       }
     };
 
-    fetchNotifications();
-  }, []);
+    if (userId) fetchNotifications();
+  }, [userId]);
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Notifications 🔔</h1>
+      <h1>🔔 Notifications</h1>
 
       {notifications.length === 0 ? (
         <p>No notifications yet</p>
@@ -41,6 +38,7 @@ function Notifications() {
               padding: 15,
               marginBottom: 10,
               borderRadius: 10,
+              backgroundColor: "#f9f9f9",
             }}
           >
             <p>{note.message}</p>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+const API = import.meta.env.VITE_API_URL;
+
 function StudentQuiz() {
   const { id } = useParams();
 
@@ -8,26 +10,24 @@ function StudentQuiz() {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
 
-  /* ⏱ Timer (10 mins) */
   const [timeLeft, setTimeLeft] = useState(600);
-
-  /* ⚠ Anti-cheat warnings */
   const [warnings, setWarnings] = useState(0);
+
+  const userId = localStorage.getItem("userId");
 
   /* ---------------- LOAD QUIZ ---------------- */
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
-        const res = await fetch("http://localhost:5000/quizzes", {
+        const res = await fetch(`${API}/quizzes`, {
           headers: {
-            Authorization:
-              "Bearer " + localStorage.getItem("token"),
+            Authorization: "Bearer " + localStorage.getItem("token"),
           },
         });
 
         const data = await res.json();
-
         const found = data.find((q) => q._id === id);
+
         setQuiz(found);
       } catch (err) {
         console.log("Quiz load error:", err);
@@ -37,89 +37,44 @@ function StudentQuiz() {
     fetchQuiz();
   }, [id]);
 
-  /* ---------------- SUBMIT QUIZ ---------------- */
-  const submitQuiz = async () => {
-    if (!quiz) return;
-
-    let score = 0;
-
-    quiz.questions.forEach((q, i) => {
-      if (answers[i] === q.correct) {
-        score++;
-      }
-    });
-
-    const percentage =
-      (score / quiz.questions.length) * 100;
-
-    try {
-      const res = await fetch(
-        "http://localhost:5000/results",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            studentId: localStorage.getItem("userId"),
-            quizId: quiz._id,
-            score,
-            percentage,
-          }),
-        }
-      );
-
-      const data = await res.json();
-
-      alert("Quiz submitted!");
-
-      window.location.href = `/results/${data._id}`;
-    } catch (err) {
-      console.log("Submit error:", err);
-    }
-  };
-
   /* ---------------- TIMER ---------------- */
   useEffect(() => {
     if (!quiz) return;
 
-    if (timeLeft <= 0) {
-      alert("⏱ Time is up! Auto-submitting...");
-      submitQuiz();
-      return;
-    }
-
     const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          submitQuiz();
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, quiz]);
+  }, [quiz]);
 
   /* ---------------- ANTI-CHEAT ---------------- */
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        const newWarnings = warnings + 1;
-        setWarnings(newWarnings);
+        setWarnings((prev) => {
+          const updated = prev + 1;
 
-        alert(
-          `⚠ Warning ${newWarnings}/3: Tab switching is not allowed during exams!`
-        );
+          alert(`⚠ Warning ${updated}/3: Do not switch tabs`);
 
-        if (newWarnings >= 3) {
-          alert(
-            "❌ Too many violations. Quiz auto-submitted."
-          );
-          submitQuiz();
-        }
+          if (updated >= 3) {
+            alert("❌ Quiz auto-submitted");
+            submitQuiz();
+          }
+
+          return updated;
+        });
       }
     };
 
-    document.addEventListener(
-      "visibilitychange",
-      handleVisibilityChange
-    );
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       document.removeEventListener(
@@ -127,7 +82,42 @@ function StudentQuiz() {
         handleVisibilityChange
       );
     };
-  }, [warnings, quiz]);
+  }, [quiz]);
+
+  /* ---------------- SUBMIT QUIZ ---------------- */
+  const submitQuiz = async () => {
+    if (!quiz || !quiz.questions) return;
+
+    let score = 0;
+
+    quiz.questions.forEach((q, i) => {
+      if (answers[i] === q.correct) score++;
+    });
+
+    const percentage = (score / quiz.questions.length) * 100;
+
+    try {
+      const res = await fetch(`${API}/results`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          studentId: userId,
+          quizId: quiz._id,
+          score,
+          percentage,
+        }),
+      });
+
+      const data = await res.json();
+
+      alert("Quiz submitted!");
+      window.location.href = `/results/${data._id}`;
+    } catch (err) {
+      console.log("Submit error:", err);
+    }
+  };
 
   /* ---------------- ANSWER SELECT ---------------- */
   const selectAnswer = (i) => {
@@ -136,7 +126,6 @@ function StudentQuiz() {
     setAnswers(updated);
   };
 
-  /* ---------------- NAVIGATION ---------------- */
   const next = () => {
     if (index < quiz.questions.length - 1) {
       setIndex(index + 1);
@@ -149,67 +138,56 @@ function StudentQuiz() {
     }
   };
 
-  /* ---------------- LOADING ---------------- */
-  if (!quiz) return <h2>Loading quiz...</h2>;
+  if (!quiz || !quiz.questions) return <h2>Loading quiz...</h2>;
 
   const q = quiz.questions[index];
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>{quiz.title}</h2>
+    <div style={{ padding: 20, maxWidth: 700, margin: "auto" }}>
+      <h2>📘 {quiz.title}</h2>
 
-      {/* TIMER */}
-      <h3>
-        ⏱ Time Left: {Math.floor(timeLeft / 60)}:
-        {(timeLeft % 60)
-          .toString()
-          .padStart(2, "0")}
-      </h3>
+      {/* TOP INFO BAR */}
+      <div style={{ marginBottom: 20 }}>
+        <h3>
+          ⏱ {Math.floor(timeLeft / 60)}:
+          {(timeLeft % 60).toString().padStart(2, "0")}
+        </h3>
 
-      {/* WARNINGS */}
-      <h3>
-        ⚠ Warnings: {warnings} / 3
-      </h3>
+        <h4>⚠ Warnings: {warnings}/3</h4>
 
-      {/* QUESTION COUNT */}
-      <h3>
-        Question {index + 1} /{" "}
-        {quiz.questions.length}
-      </h3>
+        <h4>
+          Question {index + 1} / {quiz.questions.length}
+        </h4>
+      </div>
 
       {/* QUESTION */}
-      <p>{q.question}</p>
+      <div style={{ marginBottom: 20 }}>
+        <h3>{q.question}</h3>
+      </div>
 
       {/* OPTIONS */}
-      {q.options.map((opt, i) => (
-        <div key={i}>
-          <label>
-            <input
-              type="radio"
-              checked={answers[index] === i}
-              onChange={() => selectAnswer(i)}
-            />
-            {opt}
-          </label>
-        </div>
-      ))}
+      <div style={{ marginBottom: 20 }}>
+        {q.options.map((opt, i) => (
+          <div key={i} style={{ marginBottom: 8 }}>
+            <label>
+              <input
+                type="radio"
+                checked={answers[index] === i}
+                onChange={() => selectAnswer(i)}
+              />{" "}
+              {opt}
+            </label>
+          </div>
+        ))}
+      </div>
 
       {/* BUTTONS */}
-      <div style={{ marginTop: 20 }}>
-        <button
-          onClick={prev}
-          disabled={index === 0}
-        >
+      <div>
+        <button onClick={prev} disabled={index === 0}>
           Previous
         </button>
 
-        <button
-          onClick={next}
-          disabled={
-            index === quiz.questions.length - 1
-          }
-          style={{ marginLeft: 10 }}
-        >
+        <button onClick={next} style={{ marginLeft: 10 }}>
           Next
         </button>
 
@@ -219,7 +197,7 @@ function StudentQuiz() {
             marginLeft: 10,
             backgroundColor: "green",
             color: "white",
-            padding: "10px",
+            padding: "8px 12px",
           }}
         >
           Submit Quiz

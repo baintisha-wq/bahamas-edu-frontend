@@ -5,40 +5,55 @@ import "../styles.css";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  const API = import.meta.env.VITE_API_URL;
+
   const handleLogin = async () => {
+    if (!email || !password) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const res = await fetch("http://localhost:5000/login", {
+      const res = await fetch(`${API}/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         alert(data.message || "Login failed");
+        setLoading(false);
         return;
       }
 
-      // save auth
+      // 🔥 SAVE AUTH DATA
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role);
+      localStorage.setItem("userId", data.userId);
 
-      // redirect based on role
+      // 🔥 REDIRECT BASED ON ROLE
       if (data.role === "teacher") {
         navigate("/teacher");
       } else {
         navigate("/student");
       }
+
     } catch (err) {
       console.log(err);
-      alert("Server error");
+      alert("Server connection failed");
     }
+
+    setLoading(false);
   };
 
   return (
@@ -61,9 +76,12 @@ function Login() {
           style={{ width: "100%", padding: 10, marginBottom: 10 }}
         />
 
-        {/* YOUR BUTTON */}
-        <button className="button primary" onClick={handleLogin}>
-          Login
+        <button
+          className="button primary"
+          onClick={handleLogin}
+          disabled={loading}
+        >
+          {loading ? "Logging in..." : "Login"}
         </button>
 
         <p style={{ marginTop: 10 }}>
