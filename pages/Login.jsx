@@ -1,10 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { setToken, setRole } from "../utils/auth";
 
-function Login() {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
 
   const handleLogin = async () => {
     const res = await fetch("http://localhost:5000/login", {
@@ -15,42 +14,25 @@ function Login() {
 
     const data = await res.json();
 
-    if (data.token) {
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
+    if (res.ok) {
+      setToken(data.token);
+      setRole(data.role);
 
-      if (data.role === "teacher") {
-        navigate("/teacher");
-      } else {
-        navigate("/student");
-      }
+      window.location.href =
+        data.role === "teacher" ? "/teacher" : "/student";
     } else {
       alert(data.message);
     }
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Login</h2>
+    <div>
+      <h1>Login</h1>
 
-      <input
-        placeholder="Email"
-        onChange={(e) => setEmail(e.target.value)}
-      />
-
-      <br />
-
-      <input
-        placeholder="Password"
-        type="password"
-        onChange={(e) => setPassword(e.target.value)}
-      />
-
-      <br />
+      <input placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
+      <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
 
       <button onClick={handleLogin}>Login</button>
     </div>
   );
 }
-
-export default Login;

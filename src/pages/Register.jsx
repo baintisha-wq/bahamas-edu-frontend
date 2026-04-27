@@ -1,96 +1,62 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import API_URL from "../utils/api";
 
-function Register() {
+export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student");
-
-  const navigate = useNavigate();
-
-  // 🔥 Backend URL from .env
-  const API = import.meta.env.VITE_API_URL;
-
-  // 🔥 Debug check (remove later if you want)
-  console.log("API URL:", API);
 
   const handleRegister = async () => {
     try {
-      const res = await fetch(`${API}/register`, {
+      const res = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          role,
-        }),
+        body: JSON.stringify({ name, email, password })
       });
 
       const data = await res.json();
 
-      console.log("REGISTER RESPONSE:", data);
-
       if (res.ok) {
         alert("Account created successfully!");
-        navigate("/");
+        window.location.href = "/";
       } else {
         alert(data.message || "Registration failed");
       }
-    } catch (error) {
-      console.log("REGISTER ERROR:", error);
-      alert("Server connection failed");
+
+    } catch (err) {
+      console.log(err);
+      alert("Server error");
     }
   };
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>Register</h2>
+      <h1>Register 🇧🇸 BahamasEdu</h1>
 
       <input
         placeholder="Name"
-        value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <br />
-      <br />
+      <br /><br />
 
       <input
         placeholder="Email"
-        value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <br />
-      <br />
+      <br /><br />
 
       <input
         type="password"
         placeholder="Password"
-        value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
-      <br />
-      <br />
-
-      <select
-        value={role}
-        onChange={(e) => setRole(e.target.value)}
-      >
-        <option value="student">Student</option>
-        <option value="teacher">Teacher</option>
-      </select>
-
-      <br />
-      <br />
+      <br /><br />
 
       <button onClick={handleRegister}>
-        Register
+        Create Account
       </button>
     </div>
   );
 }
-
-export default Register;

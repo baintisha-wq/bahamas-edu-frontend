@@ -1,101 +1,67 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "../styles.css";
+import React, { useState } from "react";
+import API_URL from "../utils/api";
 
-function Login() {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const navigate = useNavigate();
-
-  const API = import.meta.env.VITE_API_URL;
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      alert("Please fill all fields");
-      return;
-    }
-
-    setLoading(true);
-
     try {
-      const res = await fetch(`${API}/login`, {
+      const res = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password })
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        alert(data.message || "Login failed");
-        setLoading(false);
-        return;
-      }
+      if (res.ok) {
+        // store token
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("name", data.name);
 
-      // 🔥 SAVE AUTH DATA
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
-      localStorage.setItem("userId", data.userId);
+        alert("Login successful!");
 
-      // 🔥 REDIRECT BASED ON ROLE
-      if (data.role === "teacher") {
-        navigate("/teacher");
+        // redirect based on role
+        if (data.role === "teacher") {
+          window.location.href = "/teacher";
+        } else {
+          window.location.href = "/student";
+        }
+
       } else {
-        navigate("/student");
+        alert(data.message || "Login failed");
       }
 
     } catch (err) {
       console.log(err);
-      alert("Server connection failed");
+      alert("Server error");
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className="container">
-      <div className="card" style={{ maxWidth: "400px", margin: "auto" }}>
-        <h2>🔐 Login</h2>
+    <div style={{ padding: 20 }}>
+      <h1>Login</h1>
 
-        <input
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ width: "100%", padding: 10, marginBottom: 10 }}
-        />
+      <input
+        placeholder="Email"
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <br /><br />
 
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ width: "100%", padding: 10, marginBottom: 10 }}
-        />
+      <input
+        type="password"
+        placeholder="Password"
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <br /><br />
 
-        <button
-          className="button primary"
-          onClick={handleLogin}
-          disabled={loading}
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-
-        <p style={{ marginTop: 10 }}>
-          Don’t have an account?{" "}
-          <span
-            style={{ color: "blue", cursor: "pointer" }}
-            onClick={() => navigate("/register")}
-          >
-            Register
-          </span>
-        </p>
-      </div>
+      <button onClick={handleLogin}>
+        Login
+      </button>
     </div>
   );
 }
-
-export default Login;
