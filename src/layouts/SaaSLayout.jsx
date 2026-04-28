@@ -1,3 +1,4 @@
+import React from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
@@ -12,12 +13,11 @@ export default function SaaSLayout({ children }) {
       <div style={{ flex: 1, background: "#f5f7fb" }}>
         <Navbar />
 
-        <div style={{
-          padding: 24
-        }}>
+        <div style={{ padding: 24 }}>
           {children}
         </div>
       </div>
+
     </div>
   );
 }
